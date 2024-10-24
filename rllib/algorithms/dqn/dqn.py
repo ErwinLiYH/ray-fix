@@ -833,11 +833,20 @@ class DQN(Algorithm):
         for _ in range(store_weight):
             # Sample (MultiAgentBatch) from workers.
             with self._timers[SAMPLE_TIMER]:
-                new_sample_batch: SampleBatchType = synchronous_parallel_sample(
-                    worker_set=self.env_runner_group,
-                    concat=True,
-                    sample_timeout_s=self.config.sample_timeout_s,
-                )
+                if self.config.count_steps_by == "agent_steps":
+                    new_sample_batch: SampleBatchType = synchronous_parallel_sample(
+                        worker_set=self.env_runner_group,
+                        concat=True,
+                        max_agent_steps=self.config.total_train_batch_size,
+                        sample_timeout_s=self.config.sample_timeout_s,
+                    )
+                else:
+                    new_sample_batch: SampleBatchType = synchronous_parallel_sample(
+                        worker_set=self.env_runner_group,
+                        concat=True,
+                        max_env_steps=self.config.total_train_batch_size,
+                        sample_timeout_s=self.config.sample_timeout_s,
+                    )
 
             # Return early if all our workers failed.
             if not new_sample_batch:
