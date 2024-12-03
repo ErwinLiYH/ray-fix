@@ -1,0 +1,88 @@
+From 22819038ef7ccbf6b18d79512b9f09f673439041 Mon Sep 17 00:00:00 2001
+From: Yuanhao Li <erwinli@qq.com>
+Date: Tue, 3 Dec 2024 12:26:42 +0000
+Subject: [PATCH] fix bugs
+
+---
+ rllib/algorithms/algorithm.py     | 2 +-
+ rllib/algorithms/dqn/dqn.py       | 4 +++-
+ rllib/algorithms/ppo/ppo.py       | 2 ++
+ rllib/evaluation/env_runner_v2.py | 2 +-
+ rllib/evaluation/episode_v2.py    | 2 +-
+ 5 files changed, 8 insertions(+), 4 deletions(-)
+
+diff --git a/rllib/algorithms/algorithm.py b/rllib/algorithms/algorithm.py
+index 37c7e08097..53942b1f8f 100644
+--- a/rllib/algorithms/algorithm.py
++++ b/rllib/algorithms/algorithm.py
+@@ -1430,7 +1430,7 @@ class Algorithm(Trainable, AlgorithmBase):
+                     remote_worker_ids=selected_eval_worker_ids,
+                 )
+                 results = self.evaluation_workers.fetch_ready_async_reqs(
+-                    return_obj_refs=False, timeout_seconds=0.01
++                    return_obj_refs=False, timeout_seconds=time_out
+                 )
+                 # Make sure we properly time out if we have not received any results
+                 # for more than `time_out` seconds.
+diff --git a/rllib/algorithms/dqn/dqn.py b/rllib/algorithms/dqn/dqn.py
+index 64025f2fe4..69455ad567 100644
+--- a/rllib/algorithms/dqn/dqn.py
++++ b/rllib/algorithms/dqn/dqn.py
+@@ -772,7 +772,9 @@ class DQN(Algorithm):
+             # Sample (MultiAgentBatch) from workers.
+             with self._timers[SAMPLE_TIMER]:
+                 new_sample_batch: SampleBatchType = synchronous_parallel_sample(
+-                    worker_set=self.workers, concat=True
++                    worker_set=self.workers, concat=True,
++                    sample_timeout_s = self.config.sample_timeout_s,
++                    max_env_steps=self.config.train_batch_size,
+                 )
+ 
+             # Update counters
+diff --git a/rllib/algorithms/ppo/ppo.py b/rllib/algorithms/ppo/ppo.py
+index 43c99bf6a5..00b2bf5768 100644
+--- a/rllib/algorithms/ppo/ppo.py
++++ b/rllib/algorithms/ppo/ppo.py
+@@ -533,11 +533,13 @@ class PPO(Algorithm):
+                 train_batch = synchronous_parallel_sample(
+                     worker_set=self.workers,
+                     max_agent_steps=self.config.total_train_batch_size,
++                    sample_timeout_s = self.config.sample_timeout_s
+                 )
+             else:
+                 train_batch = synchronous_parallel_sample(
+                     worker_set=self.workers,
+                     max_env_steps=self.config.total_train_batch_size,
++                    sample_timeout_s = self.config.sample_timeout_s
+                 )
+             train_batch = train_batch.as_multi_agent()
+             self._counters[NUM_AGENT_STEPS_SAMPLED] += train_batch.agent_steps()
+diff --git a/rllib/evaluation/env_runner_v2.py b/rllib/evaluation/env_runner_v2.py
+index fc488f8e8e..cf8734c812 100644
+--- a/rllib/evaluation/env_runner_v2.py
++++ b/rllib/evaluation/env_runner_v2.py
+@@ -783,7 +783,7 @@ class EnvRunnerV2:
+                     agent_id,
+                     {
+                         SampleBatch.NEXT_OBS: obs,
+-                        SampleBatch.INFOS: infos,
++                        SampleBatch.INFOS: infos[env_id].get(agent_id, {}),
+                         SampleBatch.T: episode.length,
+                         SampleBatch.AGENT_INDEX: episode.agent_index(agent_id),
+                     },
+diff --git a/rllib/evaluation/episode_v2.py b/rllib/evaluation/episode_v2.py
+index b4d15f9454..e0abdd7f55 100644
+--- a/rllib/evaluation/episode_v2.py
++++ b/rllib/evaluation/episode_v2.py
+@@ -119,7 +119,7 @@ class EpisodeV2:
+             policy_id = self._agent_to_policy[agent_id] = self.policy_mapping_fn(
+                 agent_id,  # agent_id
+                 self,  # episode
+-                worker=self.worker,
++                self.worker,
+             )
+         # Use already determined PolicyID.
+         else:
+-- 
+2.34.1
+
