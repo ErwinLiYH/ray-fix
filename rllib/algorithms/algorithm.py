@@ -1430,7 +1430,7 @@ class Algorithm(Trainable, AlgorithmBase):
                     remote_worker_ids=selected_eval_worker_ids,
                 )
                 results = self.evaluation_workers.fetch_ready_async_reqs(
-                    return_obj_refs=False, timeout_seconds=0.01
+                    return_obj_refs=False, timeout_seconds=time_out
                 )
                 # Make sure we properly time out if we have not received any results
                 # for more than `time_out` seconds.

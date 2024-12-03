@@ -119,7 +119,7 @@ class EpisodeV2:
             policy_id = self._agent_to_policy[agent_id] = self.policy_mapping_fn(
                 agent_id,  # agent_id
                 self,  # episode
-                worker=self.worker,
+                self.worker,
             )
         # Use already determined PolicyID.
         else:

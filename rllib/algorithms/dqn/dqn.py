@@ -772,7 +772,9 @@ class DQN(Algorithm):
             # Sample (MultiAgentBatch) from workers.
             with self._timers[SAMPLE_TIMER]:
                 new_sample_batch: SampleBatchType = synchronous_parallel_sample(
-                    worker_set=self.workers, concat=True
+                    worker_set=self.workers, concat=True,
+                    sample_timeout_s = self.config.sample_timeout_s,
+                    max_env_steps=self.config.train_batch_size,
                 )
 
             # Update counters
