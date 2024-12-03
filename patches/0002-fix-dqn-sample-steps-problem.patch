@@ -1,0 +1,42 @@
+From 3731cafec48d837f1d0287aecbd491c081d393b3 Mon Sep 17 00:00:00 2001
+From: Yuanhao Li <erwinli@qq.com>
+Date: Thu, 24 Oct 2024 19:05:51 +0100
+Subject: [PATCH 2/3] fix dqn sample steps problem
+
+---
+ rllib/algorithms/dqn/dqn.py | 19 ++++++++++++++-----
+ 1 file changed, 14 insertions(+), 5 deletions(-)
+
+diff --git a/rllib/algorithms/dqn/dqn.py b/rllib/algorithms/dqn/dqn.py
+index 91ca34450f..001a38fcdc 100644
+--- a/rllib/algorithms/dqn/dqn.py
++++ b/rllib/algorithms/dqn/dqn.py
+@@ -833,11 +833,20 @@ class DQN(Algorithm):
+         for _ in range(store_weight):
+             # Sample (MultiAgentBatch) from workers.
+             with self._timers[SAMPLE_TIMER]:
+-                new_sample_batch: SampleBatchType = synchronous_parallel_sample(
+-                    worker_set=self.env_runner_group,
+-                    concat=True,
+-                    sample_timeout_s=self.config.sample_timeout_s,
+-                )
++                if self.config.count_steps_by == "agent_steps":
++                    new_sample_batch: SampleBatchType = synchronous_parallel_sample(
++                        worker_set=self.env_runner_group,
++                        concat=True,
++                        max_agent_steps=self.config.total_train_batch_size,
++                        sample_timeout_s=self.config.sample_timeout_s,
++                    )
++                else:
++                    new_sample_batch: SampleBatchType = synchronous_parallel_sample(
++                        worker_set=self.env_runner_group,
++                        concat=True,
++                        max_env_steps=self.config.total_train_batch_size,
++                        sample_timeout_s=self.config.sample_timeout_s,
++                    )
+ 
+             # Return early if all our workers failed.
+             if not new_sample_batch:
+-- 
+2.34.1
+

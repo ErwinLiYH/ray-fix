@@ -1,0 +1,25 @@
+From 4f4c1f10c062da783af88a225a068561ff52b721 Mon Sep 17 00:00:00 2001
+From: Yuanhao Li <erwinli@qq.com>
+Date: Thu, 24 Oct 2024 19:48:26 +0100
+Subject: [PATCH 3/3] fix info extraction
+
+---
+ rllib/evaluation/env_runner_v2.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/rllib/evaluation/env_runner_v2.py b/rllib/evaluation/env_runner_v2.py
+index dc391a49c2..5f76b10086 100644
+--- a/rllib/evaluation/env_runner_v2.py
++++ b/rllib/evaluation/env_runner_v2.py
+@@ -764,7 +764,7 @@ class EnvRunnerV2:
+                     agent_id,
+                     {
+                         SampleBatch.NEXT_OBS: obs,
+-                        SampleBatch.INFOS: infos,
++                        SampleBatch.INFOS: infos[env_id].get(agent_id, {}),
+                         SampleBatch.T: episode.length,
+                         SampleBatch.AGENT_INDEX: episode.agent_index(agent_id),
+                     },
+-- 
+2.34.1
+
