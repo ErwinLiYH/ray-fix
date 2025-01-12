@@ -1346,6 +1346,7 @@ class Algorithm(Trainable, AlgorithmBase):
                 ),
                 num_episodes=(num[worker.worker_index] if unit == "episodes" else None),
                 force_reset=force_reset and round == 0,
+                explore = self.config.evaluation_config["explore"]
             )
             metrics = worker.get_metrics()
             env_steps = sum(e.env_steps() for e in episodes)
