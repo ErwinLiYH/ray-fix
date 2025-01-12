@@ -1,0 +1,12 @@
+diff --git a/rllib/algorithms/algorithm.py b/rllib/algorithms/algorithm.py
+index 53942b1f8f..2e7c18df16 100644
+--- a/rllib/algorithms/algorithm.py
++++ b/rllib/algorithms/algorithm.py
+@@ -1346,6 +1346,7 @@ class Algorithm(Trainable, AlgorithmBase):
+                 ),
+                 num_episodes=(num[worker.worker_index] if unit == "episodes" else None),
+                 force_reset=force_reset and round == 0,
++                explore = self.config.evaluation_config["explore"]
+             )
+             metrics = worker.get_metrics()
+             env_steps = sum(e.env_steps() for e in episodes)
